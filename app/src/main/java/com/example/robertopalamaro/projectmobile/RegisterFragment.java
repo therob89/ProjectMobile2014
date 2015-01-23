@@ -21,6 +21,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import org.apache.http.client.ClientProtocolException;
@@ -61,6 +62,7 @@ public class RegisterFragment extends Fragment {
     private TextView password;
     private TextView email;
     private Button loginButton;
+    private ProgressBar progressBar;
     private final static int SELECT_IMAGE =110;
     onLoginListner onLoginListner;
     private RegisterTask registerTask;
@@ -101,24 +103,32 @@ public class RegisterFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         View rootView = inflater.inflate(R.layout.register_layout,container,false);
+        progressBar = (ProgressBar)rootView.findViewById(R.id.progressBar);
+        progressBar.setVisibility(View.INVISIBLE);
         button =(ImageButton)rootView.findViewById(R.id.imageButton);
+        loginButton = (Button)rootView.findViewById(R.id.buttonLogin);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (isConnected()){
-
+                    loginButton.setVisibility(View.INVISIBLE);
+                    progressBar.setVisibility(View.VISIBLE);
+                    button.setVisibility(View.INVISIBLE);
                     if(username.getText().toString().isEmpty() || password.getText().toString().isEmpty() || email.getText().toString().isEmpty()){
                         Toast.makeText(getActivity(),"Insert data before send request",Toast.LENGTH_LONG).show();
+                        loginButton.setVisibility(View.VISIBLE);
+                        progressBar.setVisibility(View.INVISIBLE);
+                        button.setVisibility(View.VISIBLE);
                         return;
                     }
                     v.setClickable(false);
-                    //Toast.makeText(getActivity(),"Connected",Toast.LENGTH_SHORT).show();
                     registerTask= new RegisterTask();
                     registerTask.execute("http://robsite.altervista.org/mobile/sendData.php");
+
+
                 }
             }
         });
-        loginButton = (Button)rootView.findViewById(R.id.buttonLogin);
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -132,6 +142,8 @@ public class RegisterFragment extends Fragment {
                 loginAsyncTask.execute("http://robsite.altervista.org/mobile/login.php");
                 hideSoftKeyboard();
                 loginButton.setClickable(false);
+
+
 
             }
         });
@@ -149,6 +161,7 @@ public class RegisterFragment extends Fragment {
 
             }
         });
+
     return rootView;
 
     }
@@ -235,15 +248,6 @@ public class RegisterFragment extends Fragment {
                 String response = httpClient.execute(httpPost, responseHandler);
                 Log.println(Log.DEBUG,"REGISTER-TASK","executed post with this json"+jsonObject.toString());
                 Log.println(Log.DEBUG, "REGISTER-TASK", "This is the server reply "+response);
-
-                //urlConnection.setDoOutput(true);
-                //urlConnection.setChunkedStreamingMode(0);
-                //urlConnection.setRequestMethod("POST");
-                //DataOutputStream outputStream = new DataOutputStream(urlConnection.getOutputStream());
-                //outputStream.writeBytes(jsonObject.toString());
-                //Log.println(Log.INFO,"REGISTER","response "+urlConnection.getResponseMessage());
-                //outputStream.flush();
-                //outputStream.close();
                 String[]tokens = response.split("<br/>");
                 if(Integer.parseInt(tokens[tokens.length-1])==0){
                     this.publishProgress();
@@ -290,12 +294,16 @@ public class RegisterFragment extends Fragment {
                 email.setText("");
 
 
+
             }
             else{
                 Toast.makeText(getActivity(),"username|password already taken",Toast.LENGTH_SHORT).show();
             }
             button.setBackgroundColor(Color.WHITE);
             button.setClickable(true);
+            loginButton.setVisibility(View.VISIBLE);
+            progressBar.setVisibility(View.INVISIBLE);
+            button.setVisibility(View.VISIBLE);
         }
     }
 
@@ -380,120 +388,7 @@ public class RegisterFragment extends Fragment {
         view.requestFocus();
         inputMethodManager.showSoftInput(view, 0);
     }
-    /*
-    private class getPositionsTask extends AsyncTask<String,Void,Integer>{
 
-        HashMap<String,String>maps;
-        @Override
-        protected Integer doInBackground(String... params) {
-                        String url = params[0];
-            HttpParams httpParameters = new BasicHttpParams();
-            HttpConnectionParams.setConnectionTimeout(httpParameters, 10000);
-            HttpConnectionParams.setSoTimeout(httpParameters, 10000+12000);
-            HttpClient httpClient = new DefaultHttpClient();
-
-            HttpPost httpPost = new HttpPost(url);
-            JSONArray jsonArray;
-            try {
-                JSONObject jsonObject2= new JSONObject();
-                jsonObject2.put("username","therob");
-                httpPost.setEntity(new ByteArrayEntity(jsonObject2.toString().getBytes(
-                        "UTF8")));
-                httpPost.setHeader("json", jsonObject2.toString());
-                httpPost.setEntity(new StringEntity(jsonObject2.toString()));
-                //List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
-                //nameValuePairs.add(new BasicNameValuePair("username",username));
-
-
-                //httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-                //httpPost.setHeader("username",username);
-                Log.println(Log.DEBUG,"SERVICE-Task","Request:  "+jsonObject2.toString());
-
-
-                ResponseHandler<String> responseHandler = new BasicResponseHandler();
-                String response = httpClient.execute(httpPost, responseHandler);
-                Log.println(Log.DEBUG,"SERVICE-Task","Reply of fucking get: "+response);
-
-                String [] tokens = response.split("<br/>");
-                jsonArray = new JSONArray(tokens[tokens.length-1]);
-                JSONObject jsonObject;
-                if(maps==null){
-                    maps = new HashMap<String, String>();
-                }
-                String user = "";
-                String lat_long_avatar = "";
-                for (int j=0;j<jsonArray.length();j++){
-                    user = lat_long_avatar = "";
-                    for (int i=0;i<jsonArray.getJSONArray(j).length();i++) {
-                        jsonObject = jsonArray.getJSONArray(j).getJSONObject(i);
-                        switch (i) {
-                            case 0:
-                                user = jsonObject.getString("user");
-                                break;
-                            case 1:
-                                lat_long_avatar = jsonObject.getString("latitude");
-                                break;
-                            case 2:
-                                lat_long_avatar = lat_long_avatar + "::" + jsonObject.getString("longitude");
-                                break;
-                            case 3:
-                                lat_long_avatar = lat_long_avatar + "::" + jsonObject.getString("avatar");
-                        }
-                    }
-                    Log.println(Log.DEBUG,"SERVICE-Task","Adding user: "+user);
-                    maps.put(user,lat_long_avatar);
-                }
-                Log.println(Log.DEBUG,"SERVICE-Task","Map_SIZE  "+maps.size());
-                return 0;
-
-
-
-
-
-
-
-            }catch (UnsupportedEncodingException e){
-                Log.println(Log.INFO, "SERVICE_TASK", "error with encoding"+e.getLocalizedMessage());
-            }catch (JSONException e){
-                Log.println(Log.INFO, "SERVICE_TASK", "Error of json" + e.getLocalizedMessage());
-                e.printStackTrace();
-
-            }catch (IOException e) {
-                Log.println(Log.INFO, "SERVICE_TASK", "Error of io " + e.getLocalizedMessage());
-                e.printStackTrace();
-            } catch (Exception e) {
-                Log.println(Log.INFO, "SERVICE_TASK", "Error" + e.getLocalizedMessage());
-            }
-            return -1;
-
-        }
-
-    }
-
-    public void callAsynchronousTask() {
-        final Handler handler = new Handler();
-        Timer timer = new Timer();
-        TimerTask doAsynchronousTask = new TimerTask() {
-            @Override
-            public void run() {
-                handler.post(new Runnable() {
-                    public void run() {
-                        try {
-                            getPositionsTask performBackgroundTask = new getPositionsTask();
-                            performBackgroundTask.execute("http://robsite.altervista.org/mobile/getAllPositions.php");
-                            // PerformBackgroundTask this class is the class that extends AsynchTask
-                        } catch (Exception e) {
-                            // TODO Auto-generated catch block
-                            Log.println(Log.INFO,"REGISTER","Error getting");
-
-                        }
-                    }
-                });
-            }
-        };
-        timer.schedule(doAsynchronousTask, 0, 120000); //execute in every 50000 ms
-    }
-*/
 
     private void workAroundReverseDnsBugInHoneycombAndEarlier(HttpClient client) {
         // Android had a bug where HTTPS made reverse DNS lookups (fixed in Ice Cream Sandwich)

@@ -39,6 +39,9 @@ import java.util.TimerTask;
 /**
  * Created by robertopalamaro on 25/11/14.
  */
+
+
+
 public class LocationService extends Service{
 
     //private final static String TAG ="Broadcast message";

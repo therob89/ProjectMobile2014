@@ -4,20 +4,13 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
-import android.media.Image;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
-import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Base64;
 import android.util.Log;
@@ -30,17 +23,14 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
-
-import org.apache.http.HttpConnection;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.scheme.LayeredSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SocketFactory;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
@@ -48,27 +38,16 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
-import org.apache.http.params.HttpProtocolParams;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.lang.reflect.Field;
+import java.net.InetAddress;
+import java.net.Socket;
+
 
 /**
  * Created by robertopalamaro on 18/11/14.
@@ -87,7 +66,7 @@ public class RegisterFragment extends Fragment {
     private RegisterTask registerTask;
     private LoginAsyncTask loginAsyncTask;
     public RegisterFragment(){}
-    Timer timer = new Timer();
+    //Timer timer = new Timer();
 
     public interface onLoginListner{
         public void onLoginDone(String user,String password);
@@ -202,23 +181,23 @@ public class RegisterFragment extends Fragment {
         @Override
         protected Integer doInBackground(String... params) {
             Log.println(Log.DEBUG,"REGISTER-TASK","Doing Request");
-            InputStream inputStream = null;
-            String result = "";
+            InputStream inputStream;
+            //String result = "";
             final int COMPRESSION_QUALITY = 80;
             try {
 
 
                 // 1. create HttpClient
 
-                HttpParams httpParameters = new BasicHttpParams();
-                HttpConnectionParams.setConnectionTimeout(httpParameters, 10000);
-                HttpConnectionParams.setSoTimeout(httpParameters, 10000+12000);
-                HttpClient httpClient = new DefaultHttpClient(httpParameters);
-
-
+                //HttpParams httpParameters = new BasicHttpParams();
+                //HttpConnectionParams.setConnectionTimeout(httpParameters, 100000);
+                //HttpConnectionParams.setSoTimeout(httpParameters, 10000+12000);
+                //DefaultHttpClient httpClient = new DefaultHttpClient(httpParameters);
                 // 2. make POST request to the given URL
+                DefaultHttpClient httpClient = new DefaultHttpClient();
+                workAroundReverseDnsBugInHoneycombAndEarlier(httpClient);
                 HttpPost httpPost = new HttpPost("http://robsite.altervista.org/mobile/sendData.php");
-                httpPost.setParams(httpParameters);
+                //httpPost.setParams(httpParameters);
 
                 JSONObject jsonObject = new JSONObject();
                 try {
@@ -247,9 +226,11 @@ public class RegisterFragment extends Fragment {
 
                 httpPost.setEntity(new ByteArrayEntity(jsonObject.toString().getBytes(
                         "UTF8")));
-                httpPost.setHeader("json", jsonObject.toString());
+                //httpPost.setHeader("json", jsonObject.toString());
+                httpPost.setHeader("Content-Type","application/json");
                 httpPost.setEntity(new StringEntity(jsonObject.toString()));
                 // 8. Execute POST request to the given URL
+
                 ResponseHandler<String> responseHandler = new BasicResponseHandler();
                 String response = httpClient.execute(httpPost, responseHandler);
                 Log.println(Log.DEBUG,"REGISTER-TASK","executed post with this json"+jsonObject.toString());
@@ -275,18 +256,18 @@ public class RegisterFragment extends Fragment {
 
 
             } catch (UnsupportedEncodingException e) {
-                Log.println(Log.INFO, "REGISTER-TASK", "Error with encoding"+e.getLocalizedMessage());
+                Log.println(Log.DEBUG, "REGISTER-TASK", "Error with encoding"+e.getLocalizedMessage());
 
                 e.printStackTrace();
             } catch (ClientProtocolException e) {
-                Log.println(Log.INFO, "REGISTER-TASK", "Error with protocol "+e.getLocalizedMessage());
+                Log.println(Log.DEBUG, "REGISTER-TASK", "Error with protocol "+e.getLocalizedMessage());
 
                 e.printStackTrace();
             } catch (IOException e) {
-                Log.println(Log.INFO, "REGISTER-TASK", "Error of io "+e.getLocalizedMessage());
+                Log.println(Log.DEBUG, "REGISTER-TASK", "Error of io "+e.getLocalizedMessage());
                 e.printStackTrace();
             }catch (Exception e) {
-                Log.println(Log.INFO, "REGISTER-TASK", "Error"+e.getLocalizedMessage());
+                Log.println(Log.DEBUG, "REGISTER-TASK", "Error"+e.getLocalizedMessage());
 
             }
             return -1;
@@ -514,6 +495,38 @@ public class RegisterFragment extends Fragment {
     }
 */
 
+    private void workAroundReverseDnsBugInHoneycombAndEarlier(HttpClient client) {
+        // Android had a bug where HTTPS made reverse DNS lookups (fixed in Ice Cream Sandwich)
+        // http://code.google.com/p/android/issues/detail?id=13117
+        SocketFactory socketFactory = new LayeredSocketFactory() {
+            SSLSocketFactory delegate = SSLSocketFactory.getSocketFactory();
+            @Override public Socket createSocket() throws IOException {
+                return delegate.createSocket();
+            }
+            @Override public Socket connectSocket(Socket sock, String host, int port,
+                                                  InetAddress localAddress, int localPort, HttpParams params) throws IOException {
+                return delegate.connectSocket(sock, host, port, localAddress, localPort, params);
+            }
+            @Override public boolean isSecure(Socket sock) throws IllegalArgumentException {
+                return delegate.isSecure(sock);
+            }
+            @Override public Socket createSocket(Socket socket, String host, int port,
+                                                 boolean autoClose) throws IOException {
+                injectHostname(socket, host);
+                return delegate.createSocket(socket, host, port, autoClose);
+            }
+            private void injectHostname(Socket socket, String host) {
+                try {
+                    Field field = InetAddress.class.getDeclaredField("hostName");
+                    field.setAccessible(true);
+                    field.set(socket.getInetAddress(), host);
+                } catch (Exception ignored) {
+                }
+            }
+        };
+        client.getConnectionManager().getSchemeRegistry()
+                .register(new Scheme("https", socketFactory, 443));
+    }
 
 
 }

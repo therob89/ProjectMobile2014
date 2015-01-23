@@ -97,7 +97,7 @@ public class MainActivity extends Activity implements RegisterFragment.onLoginLi
 
 
 
-    protected HashMap<String,String> attualUserDownloaded(){
+    protected HashMap<String,String> attualUserPositionsFromService(){
         return (HashMap<String,String> )position_received_from_service.clone();
     }
     class IncomingHandler extends Handler {
@@ -105,28 +105,27 @@ public class MainActivity extends Activity implements RegisterFragment.onLoginLi
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case LocationService.MSG_SET_VALUE:
-                    Log.println(Log.INFO,"Activity-Handler-Mex","Received mex from service");
+                    Log.println(Log.DEBUG,"Activity-Handler-Mex","Received mex from service");
                     //Toast.makeText(getApplicationContext(),"Received from service: " + msg.arg1,Toast.LENGTH_SHORT).show();
                     bundle_of_positions = msg.getData();
                     if (position_received_from_service==null){
                         position_received_from_service = new HashMap<String, String>();
                     }
                     HashMap<String,String> bundle_map = (HashMap<String,String>)bundle_of_positions.getSerializable("maps");
-                    Log.println(Log.INFO,"Activity-Handler-Mex","bundle map has size "+bundle_map.size());
+                    Log.println(Log.DEBUG,"Activity-Handler-Mex","bundle map received from service has size "+bundle_map.size());
                     for (String key : bundle_map.keySet()){
                         if (!position_received_from_service.containsKey(key)){
-                            Log.println(Log.INFO,"Activity-Handler-Mex","Adding new user");
+                            Log.println(Log.DEBUG,"Activity-Handler-Mex","Adding new user");
                             position_received_from_service.put(key,bundle_map.get(key));
                         }
                         else{
                             if (!position_received_from_service.get(key).equals(bundle_map.get(key))){
-                                Log.println(Log.INFO,"Activity-Handler-Mex","Update");
+                                Log.println(Log.DEBUG,"Activity-Handler-Mex","Update position of user");
                                 position_received_from_service.remove(key);
                                 position_received_from_service.put(key,bundle_map.get(key));
                             }
                         }
                     }
-
                     //this.removeMessages(LocationService.MSG_SET_VALUE);
                     //removeCallbacksAndMessages(null);
                     break;
@@ -148,8 +147,7 @@ public class MainActivity extends Activity implements RegisterFragment.onLoginLi
             // interact with the service.  We are communicating with the
             // service using a Messenger, so here we get a client-side
             // representation of that from the raw IBinder object.
-            Log.println(Log.INFO,"Activity","Service connection");
-
+            Log.println(Log.DEBUG,"Activity.Connection","Start connection with service");
             mService = new Messenger(service);
 
             // We want to monitor the service for as long as we are
@@ -167,7 +165,7 @@ public class MainActivity extends Activity implements RegisterFragment.onLoginLi
                 // do anything with it; we can count on soon being
                 // disconnected (and then reconnected if it can be restarted)
                 // so there is no need to do anything here.
-                Log.println(Log.INFO,"Activity","Service not respond");
+                Log.println(Log.DEBUG,"Activity.Connection","Service doesn't respond");
 
             }
         }
@@ -251,7 +249,7 @@ public class MainActivity extends Activity implements RegisterFragment.onLoginLi
 
     @Override
     public void onLoginDone(String user, String password) {
-        Log.println(Log.INFO,"Activity","this is a correct user with username and password"+user+" "+password);
+        Log.println(Log.DEBUG,"Activity.Login","Correct username and password ->"+user+" "+password);
         this.username=user;
         this.password=password;
 
@@ -291,13 +289,10 @@ public class MainActivity extends Activity implements RegisterFragment.onLoginLi
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         service = new Intent(this,LocationService.class);
-        //this.username = "tiger";
-        //this.password ="tigre";
-
         switch (id){
             case R.id.spotting_toggle:
                 if(!this.username.isEmpty() && !this.password.isEmpty() && !mBound) {
-                    Log.println(Log.INFO, "MyApp", "Service Started");
+                    Log.println(Log.DEBUG, "Activity_ActionBar", "Binding Service");
                     item.setIcon(R.drawable.ic_action_location_found);
                     bindService(service,mConnection,Context.BIND_AUTO_CREATE);
                     mBound = true;
@@ -308,6 +303,7 @@ public class MainActivity extends Activity implements RegisterFragment.onLoginLi
                     Toast.makeText(getApplication(),"You must login to activate this",Toast.LENGTH_SHORT).show();
                     //unregisterReceiver(broadcastReceiver);
                     if (mBound==true) {
+                        Log.println(Log.DEBUG, "Activity_ActionBar", "Unbinding Service");
                         unbindService(mConnection);
                         mBound = false;
                     }
@@ -398,7 +394,7 @@ public class MainActivity extends Activity implements RegisterFragment.onLoginLi
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         // Checks the orientation of the screen
-        Log.println(Log.INFO,"PACKAGE","Config changed");
+        Log.println(Log.DEBUG,"Activity.Configuration","Config changed");
 
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             Toast.makeText(this, "landscape", Toast.LENGTH_SHORT).show();
@@ -424,26 +420,25 @@ public class MainActivity extends Activity implements RegisterFragment.onLoginLi
                 return;
             }
         }
-        Log.println(Log.INFO,"Activity","Position update from map...send mex to service");
+        Log.println(Log.DEBUG,"Activity.Position_Update","Position update from map...send mex to service");
         currentLocation = location;
         if (mService == null){
-            Log.println(Log.INFO,"Activity","You must start a service to send mex");
+            Log.println(Log.DEBUG,"Activity.Position_Update","You must start a service to send mex");
             return;
         }
         Message msg = Message.obtain(null,
                 LocationService.MSG_SET_VALUE);
         Bundle bundle = new Bundle();
-
         bundle.putString("username",this.username);
         bundle.putDouble("latitude",location.getLatitude());
         bundle.putDouble("longitude",location.getLongitude());
-        Log.println(Log.INFO,"Activity","mex is "+username+"with latitude "+location.getLatitude()+" and long"
+        Log.println(Log.DEBUG,"Activity.Position_Update","mex is "+username+"with latitude "+location.getLatitude()+" and long"
         +location.getLongitude());
         msg.setData(bundle);
         try {
             mService.send(msg);
         }catch (RemoteException e){
-            Log.println(Log.INFO,"Activity","Service is not active");
+            Log.println(Log.DEBUG,"Activity.Position_Update","Service doesn't respond");
 
         }
 

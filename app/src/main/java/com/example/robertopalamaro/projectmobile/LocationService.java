@@ -94,13 +94,17 @@ public class LocationService extends Service{
                     public void run() {
                         try {
                             Log.println(Log.DEBUG,"Service.GetPosition-Task","Get Data Async started");
+                            if(usernameForGetTask==null){
+                                Log.println(Log.DEBUG,"Service.GetPosition-Task","No user is set to getting data from server");
+                                return;
+                            }
                             getPositionsTask performBackgroundTask = new getPositionsTask();
                             performBackgroundTask.execute("http://robsite.altervista.org/mobile/getAllPositions.php");
 
                             // PerformBackgroundTask this class is the class that extends AsyncTask
                         } catch (Exception e) {
                             // TODO Auto-generated catch block
-                            Log.println(Log.INFO,"Service.GetPosition-Task","Error Async Get");
+                            Log.println(Log.DEBUG,"Service.GetPosition-Task","Error Async Get");
 
                         }
                     }
@@ -142,7 +146,7 @@ public class LocationService extends Service{
                             // PerformBackgroundTask this class is the class that extends AsynchTask
                         } catch (Exception e) {
                             // TODO Auto-generated catch block
-                            Log.println(Log.INFO,"LocService.SendAsync","Error send Async");
+                            Log.println(Log.DEBUG,"LocService.SendAsync","Error send Async");
 
                         }
                     }
@@ -158,7 +162,7 @@ public class LocationService extends Service{
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case MSG_REGISTER_CLIENT:
-                    Log.println(Log.INFO,"Service-Mex-Handler","Register client");
+                    Log.println(Log.DEBUG,"Service-Mex-Handler","Register client");
                     mClients=msg.replyTo;
                     break;
                 case MSG_UNREGISTER_CLIENT:
@@ -173,16 +177,17 @@ public class LocationService extends Service{
                     username =(String) msg.getData().get("username");
                     latitude_to_send = (Double)msg.getData().get("latitude");
                     longitude_to_send = (Double)msg.getData().get("longitude");
+                    if(usernameForGetTask==null || !usernameForGetTask.equals(username)){
+                        usernameForGetTask=username;
+                    }
                     if(sendTask==null){
                         sendTask = new sendMyPositionTask();
                     }
                     if(!sending_flag){
-                        if(usernameForGetTask==null || !usernameForGetTask.equals(username)){
-                            usernameForGetTask=username;
-                        }
                         Log.println(Log.DEBUG,"Service-Mex-Handler","Sending data");
                         sending_flag=true;
-                        sendTask.execute("http://robsite.altervista.org/mobile/sendPositions.php");
+                        //sendTask.execute("http://robsite.altervista.org/mobile/sendPositions.php");
+                        new sendMyPositionTask().execute("http://robsite.altervista.org/mobile/sendPositions.php");
                     }
                     else{
                         Log.println(Log.DEBUG,"Service-Mex-Handler","We are already sending data....put in the stack");
@@ -191,11 +196,13 @@ public class LocationService extends Service{
 
 
                     }
+                    /*
                     if(!alreadyAcquiringPosition) {
                         Log.println(Log.DEBUG,"Service-Mex-Handler","***Starting to get position");
                         alreadyAcquiringPosition = true;
                         callAsynchronousTask();
                     }
+                    */
                     //removeMessages(LocationService.MSG_SET_VALUE);
                     break;
                 default:
@@ -244,10 +251,6 @@ public class LocationService extends Service{
         @Override
         protected Integer doInBackground(String... params) {
             Log.println(Log.DEBUG,"Service.GetPosition-Task","Getting position for user: "+usernameForGetTask);
-            if(usernameForGetTask==null){
-                Log.println(Log.DEBUG,"Service.GetPosition-Task","No user is set to getting data from server");
-                return -1;
-            }
             String url = params[0];
             HttpParams httpParameters = new BasicHttpParams();
             HttpConnectionParams.setConnectionTimeout(httpParameters, 10000);
@@ -308,16 +311,16 @@ public class LocationService extends Service{
                 return 0;
 
             }catch (UnsupportedEncodingException e){
-                Log.println(Log.INFO, "Service.GetPosition-Task", "error with encoding"+e.getLocalizedMessage());
+                Log.println(Log.DEBUG, "Service.GetPosition-Task", "error with encoding"+e.getLocalizedMessage());
             }catch (JSONException e){
-                Log.println(Log.INFO, "Service.GetPosition-Task", "Error of json" + e.getLocalizedMessage());
+                Log.println(Log.DEBUG, "Service.GetPosition-Task", "Error of json" + e.getLocalizedMessage());
                 e.printStackTrace();
 
             }catch (IOException e) {
-                Log.println(Log.INFO, "Service.GetPosition-Task", "Error of io " + e.getLocalizedMessage());
+                Log.println(Log.DEBUG, "Service.GetPosition-Task", "Error of io " + e.getLocalizedMessage());
                 e.printStackTrace();
             } catch (Exception e) {
-                Log.println(Log.INFO, "Service.GetPosition-Task", "Error" + e.getLocalizedMessage());
+                Log.println(Log.DEBUG, "Service.GetPosition-Task", "Error" + e.getLocalizedMessage());
             }
             return -1;
 
@@ -360,7 +363,7 @@ public class LocationService extends Service{
         protected void onPreExecute() {
             super.onPreExecute();
             if (username==null || latitude_to_send == 0 || longitude_to_send == 0){
-                Log.println(Log.INFO,"SERVICE-Task-Send-Pos","No new position");
+                Log.println(Log.DEBUG,"SERVICE-Task-Send-Pos","No new position to send");
                 cancel(true);
             }
         }
@@ -369,14 +372,14 @@ public class LocationService extends Service{
         protected void onPostExecute(Integer integer) {
             super.onPostExecute(integer);
             if (integer == 0){
-                Log.println(Log.INFO, "Service-Task-Send-Pos", "Correct sending data");
+                Log.println(Log.DEBUG, "Service-Task-Send-Pos", "Correct sending data");
                 username = null;
                 latitude_to_send = 0;
                 longitude_to_send = 0;
             }
             else{
                 // put in the stack
-                Log.println(Log.INFO, "Service-Task-Send-Pos", "Error when sending data,insert into stack");
+                Log.println(Log.DEBUG, "Service-Task-Send-Pos", "Error when sending data,insert into stack");
                 String temp = username+"::"+String.valueOf(latitude_to_send)+"::"+String.valueOf(longitude_to_send);
                 pendingPositions.push(temp);
 
@@ -386,7 +389,7 @@ public class LocationService extends Service{
 
         @Override
         protected Integer doInBackground(String... params) {
-            Log.println(Log.INFO,"SERVICE-Task-SendPos","Sending Position");
+            Log.println(Log.DEBUG,"SERVICE-Task-SendPos","Sending Position");
             String url = params[0];
             HttpParams httpParameters = new BasicHttpParams();
             HttpConnectionParams.setConnectionTimeout(httpParameters, 10000);
@@ -404,7 +407,7 @@ public class LocationService extends Service{
 
                 ResponseHandler<String> responseHandler = new BasicResponseHandler();
                 String response = httpClient.execute(httpPost, responseHandler);
-                Log.println(Log.INFO,"SERVICE-Task-SendPos","Reply of server "+response);
+                Log.println(Log.DEBUG,"SERVICE-Task-SendPos","Reply of server "+response);
                 String[]tokens = response.split("<br/>");
                 if(Integer.parseInt(tokens[tokens.length-1])==0){
                     return 0;
@@ -413,14 +416,14 @@ public class LocationService extends Service{
 
 
             }catch (JSONException e){
-                Log.println(Log.INFO, "SERVICE-Task-SendPos", "error with json"+e.getLocalizedMessage());
+                Log.println(Log.DEBUG, "SERVICE-Task-SendPos", "error with json"+e.getLocalizedMessage());
             }catch (UnsupportedEncodingException e){
-                Log.println(Log.INFO, "SERVICE-Task-SendPos", "error with encoding"+e.getLocalizedMessage());
+                Log.println(Log.DEBUG, "SERVICE-Task-SendPos", "error with encoding"+e.getLocalizedMessage());
             } catch (IOException e) {
-                Log.println(Log.INFO, "SERVICE-Task-SendPos", "Error of io " + e.getLocalizedMessage());
+                Log.println(Log.DEBUG, "SERVICE-Task-SendPos", "Error of io " + e.getLocalizedMessage());
                 e.printStackTrace();
             } catch (Exception e) {
-                Log.println(Log.INFO, "SERVICE-Task-SendPos", "Error" + e.getLocalizedMessage());
+                Log.println(Log.DEBUG, "SERVICE-Task-SendPos", "Error" + e.getLocalizedMessage());
             }
             return -1;
 
@@ -432,16 +435,18 @@ public class LocationService extends Service{
     @Override
     public IBinder onBind(Intent intent) {
         Toast.makeText(getApplicationContext(), "Service Binding", Toast.LENGTH_SHORT).show();
+        Log.println(Log.DEBUG, "LocationService.bind", "Service bind");
         timer=new Timer();
         pendingPositions = new Stack<String>();
         sendPosinAsyncMode();
+        callAsynchronousTask();
         return mMessenger.getBinder();
     }
 
     @Override
     public boolean onUnbind(Intent intent) {
         Toast.makeText(getApplicationContext(), "Location-Service Unbind", Toast.LENGTH_SHORT).show();
-        Log.println(Log.INFO, "REGISTER", "Service unbind");
+        Log.println(Log.DEBUG, "LocationService.unbind", "Service unbind");
         handler.removeCallbacksAndMessages(null);
         alreadyAcquiringPosition=false;
         pendingPositions.clear();

@@ -1,9 +1,9 @@
 package com.example.robertopalamaro.projectmobile;
+
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
@@ -11,7 +11,6 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.location.Address;
 import android.location.Location;
@@ -22,31 +21,23 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
-import android.os.Messenger;
+
 import android.support.annotation.Nullable;
 import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
-import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.location.LocationClient;
-import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -57,8 +48,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.sql.Time;
-import java.util.ArrayList;
+
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -75,8 +65,8 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
     private final static int TOP_N_ELEMENTS = 30;
     private LocationListener locationListener;
-    private static final String TAG = "Broadcast_Updating";
-    private Intent intent;
+    //private static final String TAG = "Broadcast_Updating";
+    //private Intent intent;
     private LocationManager locationManager;
     onUpdatePositionListener onUpdatePositionListener;
     private Timer timer = null;
@@ -101,7 +91,7 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        intent = new Intent(getActivity(),LocationService.class);
+        //intent = new Intent(getActivity(),LocationService.class);
         locationManager = (LocationManager)getActivity().getSystemService(Context.LOCATION_SERVICE);
         // Define a listener that responds to location updates
         locationListener = new LocationListener() {
@@ -138,14 +128,14 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
         }
         mLocationClient.connect();
         HashMap<String,String>pos = (HashMap<String,String>)getArguments().get("maps");
-        Log.println(Log.INFO,"MAP_FRAGMENT","Taking started position and adding to map");
+        Log.println(Log.DEBUG,"MAP_FRAGMENT.LifeCycle","Acquiring start position and adding to map");
         if (pos!=null) {
             for (String k : pos.keySet()) {
                 MarkerOptions markerOptions = stringToMarker(k, pos.get(k));
                 markerOnMap.put(k,(googleMap.addMarker(markerOptions)));
             }
         }
-        Log.println(Log.INFO,"MAP_FRAGMENT","Start timer and timer task");
+        Log.println(Log.DEBUG,"MAP_FRAGMENT.LifeCycle","Start timer and timer task");
         if (timer == null){
             timer = new Timer();
         }
@@ -155,21 +145,17 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
 
     @Override
     public void onDestroy() {
-        Log.println(Log.INFO,"MAP_FRAGMENT","Called on destroy");
+        Log.println(Log.DEBUG,"MAP_FRAGMENT","Called on destroy");
         if(mLocationClient.isConnected()){
             mLocationClient.disconnect();
 
         }
-
         Toast.makeText(getActivity(), "Disconnected", Toast.LENGTH_SHORT).show();
 
         super.onDestroy();
 
 
     }
-
-
-
     @Override
     public void onDestroyView() {
         super.onDestroyView();
@@ -177,18 +163,19 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
         //getActivity().stopService(intent);
     }
     @Override
+
     public void onConnected(Bundle bundle) {
         Toast.makeText(getActivity(), "Connected", Toast.LENGTH_SHORT).show();
-        Log.println(Log.INFO,"Map ","Connected");
+        Log.println(Log.DEBUG,"Map.onConnected ","Connected");
         mcurrentLocation = mLocationClient.getLastLocation();
         CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(new LatLng(mcurrentLocation.getLatitude(), mcurrentLocation.getLongitude()),16);
         googleMap.animateCamera(cameraUpdate);
         googleMap.setOnInfoWindowClickListener(this);
-        new LoadDataAsyncThread(getActivity()).execute(getResources().openRawResource(R.raw.strutturericettivewithcoordinate1),getResources().openRawResource(R.raw.strutturericettivewithcoordinate2)
+        new LoadHotelAsync(getActivity()).execute(getResources().openRawResource(R.raw.strutturericettivewithcoordinate1),getResources().openRawResource(R.raw.strutturericettivewithcoordinate2)
                 ,getResources().openRawResource(R.raw.strutturericettivewithcoordinate3));
         locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
         if(timer != null){
-            Log.println(Log.INFO,"Map ","Start position acquiring from activity");
+            Log.println(Log.DEBUG,"Map.onConnected ","Start position acquiring from activity");
             // add timer
             timer.scheduleAtFixedRate(new TimerTask() {
                 @Override
@@ -211,7 +198,7 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
     @Override
     public void onInfoWindowClick(Marker marker) {
         Toast.makeText(getActivity(),"Clicked on info marker"+marker.getTitle(),Toast.LENGTH_SHORT).show();
-        Log.println(Log.INFO,"onInfoWindow","***************** On info window");
+        Log.println(Log.DEBUG,"Map.infoView","Pressed on info view");
         Intent intent = new Intent(Intent.ACTION_VIEW,
                 Uri.parse("http://maps.google.com/maps?saddr="+mcurrentLocation.getLatitude()+","+mcurrentLocation.getLongitude()+"&daddr="+marker.getPosition().latitude+","+marker.getPosition().longitude));
         startActivity(intent);
@@ -245,14 +232,14 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
              * If no resolution is available, display a dialog to the
              * user with the error.
              */
-            Log.println(Log.DEBUG, "MyApp", String.valueOf(connectionResult.getErrorCode()));
+            Log.println(Log.DEBUG, "Map.onConnectedFailed", String.valueOf(connectionResult.getErrorCode()));
         }
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        Log.println(Log.DEBUG,"Fragment-Lifecycle","onPause");
+        Log.println(Log.DEBUG,"Map.Lifecycle","onPause");
         FragmentManager fragmentManager = getActivity().getFragmentManager();
         MapFragment fragment = (MapFragment) fragmentManager.findFragmentById(R.id.map);
         FragmentTransaction transaction = fragmentManager.beginTransaction();
@@ -270,7 +257,7 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
     @Override
     public void onStop() {
         // Disconnecting the client invalidates it.
-        Log.println(Log.DEBUG,"Fragment-Lifecycle","onStop");
+        Log.println(Log.DEBUG,"Map.Lifecycle","onStop");
         mLocationClient.disconnect();
         locationManager.removeUpdates(locationListener);
         super.onStop();
@@ -317,12 +304,12 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
 
     }
 
-    public class LoadDataAsyncThread extends AsyncTask<InputStream,Integer,TreeMap<Double,Address>> {
+    public class LoadHotelAsync extends AsyncTask<InputStream,Integer,TreeMap<Double,Address>> {
 
         private TreeMap<Double,Address> hotel_coordinates;
         Context mContext;
 
-        public LoadDataAsyncThread(Context c){
+        public LoadHotelAsync(Context c){
             super();
             mContext=c;
             hotel_coordinates = new TreeMap<Double, Address>();
@@ -335,11 +322,11 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
                 Location temp = new Location("myLocation");
                 String[] tokens;
                 String line;
-                Location loc;
-                double tempDistance = 0;
+                //Location loc;
+                double tempDistance;
                 Address myAddress;
-                int z = 0;
                 try {
+                    //int z = 0;
                     while ((line = stream.readLine()) != null) {
                         tokens = line.split(":");
                         String name = tokens[0];
@@ -348,7 +335,7 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
                         double longitude = Double.valueOf(tokens[4]);
                         temp.setLatitude(latitude);
                         temp.setLongitude(longitude);
-                        z++;
+                        //z++;
                         tempDistance = mcurrentLocation.distanceTo(temp);
                         if (tempDistance < 30000) {
                             myAddress = new Address(Locale.getDefault());
@@ -361,11 +348,11 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
                     }
 
                 } catch (FileNotFoundException e) {
-                    Log.println(Log.DEBUG, "THREAD", "FILe not found!!");
+                    Log.println(Log.DEBUG, "Map.LoadHotelAsync", "FILe not found!!");
                     cancel(true);
 
                 } catch (IOException e) {
-                    Log.println(Log.DEBUG, "THREAD", "IO exception!!");
+                    Log.println(Log.DEBUG, "Map.LoadHotelAsync", "IO exception!!");
                     cancel(true);
                 }
             }
@@ -381,7 +368,7 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
         @Override
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
-            Log.println(Log.DEBUG,"ASYNC","***************** 50 done");
+            Log.println(Log.DEBUG,"Map.HotelPositionTask","***************** 50 done");
         }
 
         @Override
@@ -395,7 +382,7 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
         protected void onPostExecute(TreeMap<Double, Address> locationFloatTreeMap) {
             super.onPostExecute(locationFloatTreeMap);
             MainActivity ma = (MainActivity)getActivity();
-            Log.println(Log.INFO,"ASYNC"," On Post Execute");
+            Log.println(Log.DEBUG,"Map.LoadHotelAsync"," On Post Execute");
             int count =0;
             for (Map.Entry<Double,Address> entry:hotel_coordinates.entrySet()){
                 if (count>=TOP_N_ELEMENTS){
@@ -420,7 +407,8 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         // Checks the orientation of the screen
-        Log.println(Log.INFO,"PACKAGE","Config changed");
+        Log.println(Log.DEBUG,"Map.Configuration_Changed" +
+                "","Config changed");
 
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             Toast.makeText(getActivity(), "landscape", Toast.LENGTH_SHORT).show();
@@ -435,40 +423,38 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
     private class TaskToGetActivityPos extends AsyncTask<HashMap<String,Marker>,MarkerOptions,HashMap<String,MarkerOptions>>{
         @Override
         protected HashMap<String,MarkerOptions> doInBackground(HashMap<String,Marker>...params) {
-            Log.println(Log.INFO, "Map_Task ", "Task Get Pos started!!!");
+            Log.println(Log.DEBUG, "Map.GetActivityPos", "Task Get Position started!!!");
             HashMap<String,Marker>markerOnMap = (HashMap<String,Marker>)params[0].clone();
             HashMap<String,MarkerOptions>markerToReturn = new HashMap<String, MarkerOptions>();
             MainActivity mainActivity = (MainActivity)getActivity();
             if (mainActivity.position_received_from_service==null){
-                Log.println(Log.INFO, "Map_Task ", "No user on map!!!");
+                Log.println(Log.DEBUG, "Map.GetActivityPos", "No new position!!!");
                 return null;
             }
-            Log.println(Log.INFO, "Map_Task ", "size of position of activity is!!!"+mainActivity.attualUserDownloaded().size());
-            HashMap<String,String> positionFromActivity = mainActivity.attualUserDownloaded();
+            Log.println(Log.DEBUG, "Map.GetActivityPos", "size of position of activity is!!!"+mainActivity.attualUserPositionsFromService().size());
+            HashMap<String,String> positionFromActivity = mainActivity.attualUserPositionsFromService();
             for (String k : positionFromActivity.keySet()){
                 if (markerOnMap.containsKey(k)){
-                    String [] elements = positionFromActivity.get(k).split("::");
-                    LatLng latLng = new LatLng(Double.parseDouble(elements[0]),Double.parseDouble(elements[1]));
+                    //String [] elements = positionFromActivity.get(k).split("::");
+                    //LatLng latLng = new LatLng(Double.parseDouble(elements[0]),Double.parseDouble(elements[1]));
                     this.publishProgress(stringToMarker(k,positionFromActivity.get(k)));
                 }
                 else{
                     markerToReturn.put(k,stringToMarker(k,positionFromActivity.get(k)));
                 }
             }
-
-            Log.println(Log.INFO, "Map_Task ", "Task Get Pos ended!!!");
+            Log.println(Log.DEBUG, "Map.GetActivityPos", "Task Get Pos finished!!!");
             return markerToReturn;
         }
 
         @Override
         protected void onProgressUpdate(MarkerOptions... values) {
-            Log.println(Log.INFO, "Map_Task ", "Update position!!!");
+            Log.println(Log.DEBUG, "Map.GetActivityPos.onProgressUpdate", "Update an existing position!!!");
             super.onProgressUpdate(values);
             MarkerOptions mo = values[0];
             Marker temp = markerOnMap.get(mo.getTitle());
             if (mo.getPosition().latitude!=temp.getPosition().latitude ||mo.getPosition().longitude!=temp.getPosition().longitude) {
                 temp.remove();
-
             }
             markerOnMap.put(mo.getTitle(),googleMap.addMarker(mo));
         }
@@ -479,7 +465,7 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
             if (stringMarkerOptionsHashMap==null){
                 return;
             }
-            Log.println(Log.INFO, "Map_Task ", "We have "+stringMarkerOptionsHashMap.size()+" new users");
+            Log.println(Log.DEBUG, "Map.GetActivityPos.onPostExec ", "We have "+stringMarkerOptionsHashMap.size()+"new users");
             for (String k : stringMarkerOptionsHashMap.keySet()){
                markerOnMap.put(k,googleMap.addMarker(stringMarkerOptionsHashMap.get(k)));
             }
@@ -488,7 +474,7 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
 
     private MarkerOptions stringToMarker(String user,String lat_lng_avatar){
 
-        Log.println(Log.INFO,"Map_Method ","Draw a new position");
+        Log.println(Log.DEBUG,"Map.StringToMarker ","Draw a new position");
         String [] elements = lat_lng_avatar.split("::");
         LatLng latLng = new LatLng(Double.parseDouble(elements[0]),Double.parseDouble(elements[1]));
         byte[] decodedString = Base64.decode(elements[2], Base64.DEFAULT);

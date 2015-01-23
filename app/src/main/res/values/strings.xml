@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">ProjectMobile</string>
+    <string name="action_settings">Settings</string>
+    <string-array name="drawer_list">
+        <item>Maps</item>
+        <item>List of neighbors hotel</item>
+        <item>Favourite</item>
+        <item>Spotting service</item>
+    </string-array>
+    <string name="drawer_open">Open navigation drawer</string>
+    <string name="drawer_close">Close navigation drawer</string>
+
+</resources>

@@ -2,9 +2,6 @@ package com.example.robertopalamaro.projectmobile;
 
 import android.app.Service;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -12,22 +9,17 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
 
 
-import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
@@ -39,7 +31,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Stack;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -50,8 +41,8 @@ import java.util.TimerTask;
  */
 public class LocationService extends Service{
 
-    private final static String TAG ="Broadcast message";
-    public static final String BROADCAST_ACTION = "com.example.robertopalamaro.projectmobile.updateUI";
+    //private final static String TAG ="Broadcast message";
+    //public static final String BROADCAST_ACTION = "com.example.robertopalamaro.projectmobile.updateUI";
     private ArrayList<FriendMarkers>usersPosition;
     static final int MSG_REGISTER_CLIENT = 1;
     private HashMap<String,String> maps = null;
@@ -73,19 +64,18 @@ public class LocationService extends Service{
     static final int MSG_SET_VALUE = 3;
 
     private final Handler handler = new Handler();
-    private final Handler handler2 = new Handler();
+    //private final Handler handler2 = new Handler();
 
     Messenger mClients;
-
+    Timer timer;
     Integer value;
-    private Intent intent;
+    //private Intent intent;
     final Messenger mMessenger = new Messenger(new IncomingHandler());
     private String username=null;
     private double latitude_to_send =0;
     private double longitude_to_send=0;
-    Timer timer;
-    private TimerTask taskToSend;
-    private TimerTask taskToAcquire;
+    //private TimerTask taskToSend;
+    //private TimerTask taskToAcquire;
     private Bundle mex_attachment_bundle;
     private boolean sending_flag = false;
     private boolean alreadyAcquiringPosition = false;
@@ -100,14 +90,14 @@ public class LocationService extends Service{
                 handler.post(new Runnable() {
                     public void run() {
                         try {
-
+                            Log.println(Log.DEBUG,"Service.GetPosition-Task","Get Data Async started");
                             getPositionsTask performBackgroundTask = new getPositionsTask();
                             performBackgroundTask.execute("http://robsite.altervista.org/mobile/getAllPositions.php");
 
-                            // PerformBackgroundTask this class is the class that extends AsynchTask
+                            // PerformBackgroundTask this class is the class that extends AsyncTask
                         } catch (Exception e) {
                             // TODO Auto-generated catch block
-                            Log.println(Log.INFO,"REGISTER","Error getting");
+                            Log.println(Log.INFO,"Service.GetPosition-Task","Error Async Get");
 
                         }
                     }
@@ -118,7 +108,7 @@ public class LocationService extends Service{
     }
 
 
-    public void sendPosinAsynchronousModeTask() {
+    public void sendPosinAsyncMode() {
         final Handler handler = new Handler();
         Timer timer = new Timer();
         TimerTask doAsynchronousTask = new TimerTask() {
@@ -127,7 +117,7 @@ public class LocationService extends Service{
                 handler.post(new Runnable() {
                     public void run() {
                         try {
-                            Log.println(Log.DEBUG,"LocService.SendAsync","Sending data Started!");
+                            Log.println(Log.DEBUG,"LocService.SendAsync","Sending data Async Started!");
                             if(sending_flag==false){
                                 if (username==null && latitude_to_send==0 && longitude_to_send==0){
                                     if (pendingPositions.size()!=0){
@@ -149,14 +139,14 @@ public class LocationService extends Service{
                             // PerformBackgroundTask this class is the class that extends AsynchTask
                         } catch (Exception e) {
                             // TODO Auto-generated catch block
-                            Log.println(Log.INFO,"REGISTER","Error getting");
+                            Log.println(Log.INFO,"LocService.SendAsync","Error send Async");
 
                         }
                     }
                 });
             }
         };
-        timer.schedule(doAsynchronousTask, 0, 120000); //execute in every 50000 ms
+        timer.schedule(doAsynchronousTask, 30000, 180000); //execute in every 50000 ms
     }
 
 
@@ -183,7 +173,7 @@ public class LocationService extends Service{
                     if(sendTask==null){
                         sendTask = new sendMyPositionTask();
                     }
-                    if(sending_flag==false){
+                    if(!sending_flag){
                         if(usernameForGetTask==null || !usernameForGetTask.equals(username)){
                             usernameForGetTask=username;
                         }
@@ -198,7 +188,7 @@ public class LocationService extends Service{
 
 
                     }
-                    if(alreadyAcquiringPosition==false) {
+                    if(!alreadyAcquiringPosition) {
                         Log.println(Log.DEBUG,"Service-Mex-Handler","***Starting to get position");
                         alreadyAcquiringPosition = true;
                         callAsynchronousTask();
@@ -215,7 +205,7 @@ public class LocationService extends Service{
     @Override
     public void onCreate() {
         super.onCreate();
-        intent = new Intent(BROADCAST_ACTION);
+        //intent = new Intent(BROADCAST_ACTION);
 
 
     }
@@ -240,8 +230,8 @@ public class LocationService extends Service{
         super.onDestroy();
         Toast.makeText(getApplicationContext(), "Service stopped", Toast.LENGTH_SHORT).show();
         timer.cancel();
-        taskToAcquire=null;
-        taskToSend=null;
+        //taskToAcquire=null;
+        //taskToSend=null;
         alreadyAcquiringPosition = false;
         handler.removeCallbacksAndMessages(null);
     }
@@ -252,6 +242,7 @@ public class LocationService extends Service{
         protected Integer doInBackground(String... params) {
             Log.println(Log.DEBUG,"Service.GetPosition-Task","Getting position for user: "+usernameForGetTask);
             if(usernameForGetTask==null){
+                Log.println(Log.DEBUG,"Service.GetPosition-Task","No user is set to getting data from server");
                 return -1;
             }
             String url = params[0];
@@ -280,7 +271,7 @@ public class LocationService extends Service{
 
                 ResponseHandler<String> responseHandler = new BasicResponseHandler();
                 String response = httpClient.execute(httpPost, responseHandler);
-                Log.println(Log.DEBUG,"Service.GetPosition-Task","Reply of fucking get: "+response);
+                Log.println(Log.DEBUG,"Service.GetPosition-Task","Server's reply: "+response);
 
                 String [] tokens = response.split("<br/>");
                 jsonArray = new JSONArray(tokens[tokens.length-1]);
@@ -288,8 +279,8 @@ public class LocationService extends Service{
                 if(maps==null){
                     maps = new HashMap<String, String>();
                 }
-                String user = "";
-                String lat_long_avatar = "";
+                String user;
+                String lat_long_avatar;
                 for (int j=0;j<jsonArray.length();j++){
                     user = lat_long_avatar = "";
                     for (int i=0;i<jsonArray.getJSONArray(j).length();i++) {
@@ -308,17 +299,10 @@ public class LocationService extends Service{
                                 lat_long_avatar = lat_long_avatar + "::" + jsonObject.getString("avatar");
                         }
                     }
-                    Log.println(Log.DEBUG,"Service.GetPosition-Task","Adding user: "+user);
                     maps.put(user,lat_long_avatar);
                 }
                 Log.println(Log.DEBUG,"Service.GetPosition-Task","Map_SIZE:  "+maps.size());
                 return 0;
-
-
-
-
-
-
 
             }catch (UnsupportedEncodingException e){
                 Log.println(Log.INFO, "Service.GetPosition-Task", "error with encoding"+e.getLocalizedMessage());
@@ -340,7 +324,7 @@ public class LocationService extends Service{
         protected void onPostExecute(Integer integer) {
             super.onPostExecute(integer);
             if (integer==-1){
-                Log.println(Log.DEBUG, "Service.GetPosition-Task","Thread returns -1");
+                Log.println(Log.DEBUG, "Service.GetPosition-Task","Get request: returns -1");
                 return;
             }
             if (maps==null){
@@ -447,7 +431,7 @@ public class LocationService extends Service{
         Toast.makeText(getApplicationContext(), "Service Binding", Toast.LENGTH_SHORT).show();
         timer=new Timer();
         pendingPositions = new Stack<String>();
-        sendPosinAsynchronousModeTask();
+        sendPosinAsyncMode();
         return mMessenger.getBinder();
     }
 

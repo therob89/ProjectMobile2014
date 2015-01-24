@@ -14,7 +14,7 @@ public class SwipeListView {
 	public static interface SwipeListViewCallback {
 		/**
 		 * 
-		 * @return ListView
+		 * @return ListView modificato da imac
 		 */
 		public abstract ListView getListView();
 

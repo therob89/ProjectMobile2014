@@ -7,18 +7,22 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Register to Friend Serives"
+        android:text="Register/Login to spotting service"
         android:id="@+id/textView3"
         android:gravity="center|center_vertical"
         android:textSize="20dp"
-        android:layout_gravity="center_horizontal" />
+        android:layout_gravity="center_horizontal"
+        android:paddingBottom="50px"
+        android:paddingTop="50px" />
 
     <ImageView
         android:layout_width="140dp"
         android:layout_height="140dp"
+        android:background="@drawable/border"
         android:id="@+id/imageViewRegister"
         android:layout_gravity="center_horizontal"
-        android:visibility="visible" />
+        android:visibility="visible"
+        android:paddingBottom="20dip" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -26,7 +30,8 @@
         android:id="@+id/username"
         android:layout_gravity="center_horizontal"
         android:hint="Insert Username"
-        android:textSize="14dp" />
+        android:textSize="14dp"
+        android:paddingTop="40px" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -51,12 +56,12 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal">
 
-        <ImageButton
+        <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/imageButton"
+            android:id="@+id/loginButton"
             android:layout_gravity="center"
-            android:src="@drawable/ic_action_send_now"
+            android:text="Sign-In"
             android:layout_alignParentTop="true"
             android:layout_alignParentStart="true"
             android:layout_alignParentLeft="true"
@@ -69,7 +74,7 @@
             android:layout_height="wrap_content"
             android:text="Login"
             android:id="@+id/buttonLogin"
-            android:layout_toEndOf="@+id/imageButton"
+            android:layout_toEndOf="@+id/loginButton"
             android:layout_alignParentTop="true"
             android:layout_centerHorizontal="true"
             android:layout_alignParentRight="false" />
@@ -83,7 +88,7 @@
             android:indeterminate="true"
             android:layout_alignParentTop="true"
             android:layout_alignParentStart="true"
-            android:layout_alignBottom="@+id/imageButton"
+            android:layout_alignBottom="@+id/loginButton"
             android:layout_toStartOf="@+id/buttonLogin"
         />
 

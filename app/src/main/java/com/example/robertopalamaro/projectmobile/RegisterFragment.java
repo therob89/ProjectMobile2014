@@ -57,7 +57,7 @@ public class RegisterFragment extends Fragment {
 
 
     private ImageView imageView;
-    private ImageButton button;
+    private Button button;
     private TextView username;
     private TextView password;
     private TextView email;
@@ -105,7 +105,7 @@ public class RegisterFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.register_layout,container,false);
         progressBar = (ProgressBar)rootView.findViewById(R.id.progressBar);
         progressBar.setVisibility(View.INVISIBLE);
-        button =(ImageButton)rootView.findViewById(R.id.imageButton);
+        button =(Button)rootView.findViewById(R.id.loginButton);
         loginButton = (Button)rootView.findViewById(R.id.buttonLogin);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -152,7 +152,7 @@ public class RegisterFragment extends Fragment {
         username = (TextView) rootView.findViewById(R.id.username);
         password = (TextView) rootView.findViewById(R.id.password);
         email = (TextView)rootView.findViewById(R.id.email);
-        imageView.setBackgroundColor(Color.GRAY);
+        //imageView.setBackgroundColor(Color.GRAY);
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

@@ -114,7 +114,7 @@ public class LocationService extends Service{
                 });
             }
         };
-        timer.schedule(doAsynchronousTask, 0, 120000); //execute in every 50000 ms
+        timer.schedule(doAsynchronousTask, 0, 60000); //execute in every 50000 ms
     }
 
 

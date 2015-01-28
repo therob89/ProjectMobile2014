@@ -233,24 +233,39 @@ public class MainActivity extends Activity implements RegisterFragment.onLoginLi
 
     @Override
     protected void onDestroy() {
+        Log.println(Log.DEBUG,"Activity.Lifecycle","onDestroy");
+
+        if(mBound) {
+            mBound = false;
+            handler.removeCallbacksAndMessages(null);
+
+            Message msg = Message.obtain(null,
+                    LocationService.MSG_UNREGISTER_CLIENT);
+            try {
+                mService.send(msg);
+            }catch (RemoteException e){
+                Log.println(Log.DEBUG,"Activity.Unbinding","Service doesn't respond");
+            }
+            unbindService(mConnection);
+
+
+        }
         super.onDestroy();
-        handler.removeCallbacksAndMessages(null);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        service = new Intent(this,LocationService.class);
+        Log.println(Log.DEBUG,"Activity.Lifecycle","onStart");
+        //service = new Intent(this,LocationService.class);
 
     }
 
     @Override
     protected void onStop() {
+        Log.println(Log.DEBUG,"Activity.Lifecycle","onStop");
         super.onStop();
-        if(mBound) {
-            unbindService(mConnection);
-            mBound = false;
-        }
+
 
     }
 
@@ -308,18 +323,17 @@ public class MainActivity extends Activity implements RegisterFragment.onLoginLi
                 else{
                     item.setIcon(R.drawable.ic_action_location_off);
                     Toast.makeText(getApplication(),"Spotting disabled",Toast.LENGTH_SHORT).show();
-                    Message msg = Message.obtain(null,
-                            LocationService.MSG_UNREGISTER_CLIENT);
-                    try {
-                        mService.send(msg);
-                    }catch (RemoteException e){
-                        Log.println(Log.DEBUG,"Activity.Unbinding","Service doesn't respond");
-                    }
-                    //unregisterReceiver(broadcastReceiver);
                     if (mBound) {
                         Log.println(Log.DEBUG, "Activity_ActionBar", "Unbinding Service");
-                        unbindService(mConnection);
                         mBound = false;
+                        Message msg = Message.obtain(null,
+                                LocationService.MSG_UNREGISTER_CLIENT);
+                        try {
+                            mService.send(msg);
+                        }catch (RemoteException e){
+                            Log.println(Log.DEBUG,"Activity.Unbinding","Service doesn't respond");
+                        }
+                        unbindService(mConnection);
                     }
                 }
                 break;

@@ -160,7 +160,7 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
         }
         mLocationClient.connect();
         HashMap<String,String>pos = (HashMap<String,String>)getArguments().get("maps");
-        Log.println(Log.DEBUG,"MAP_FRAGMENT.LifeCycle","Acquiring start position and adding to map");
+        Log.println(Log.DEBUG,"MAP_FRAGMENT.LifeCycle_On_CreateView","Acquiring start position and adding to map");
         if (pos!=null) {
             for (String k : pos.keySet()) {
                 MarkerOptions markerOptions = stringToMarker(k, pos.get(k));
@@ -277,9 +277,11 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
         Log.println(Log.DEBUG,"Map.Lifecycle","onPause");
         FragmentManager fragmentManager = getActivity().getFragmentManager();
         MapFragment fragment = (MapFragment) fragmentManager.findFragmentById(R.id.map);
-        FragmentTransaction transaction = fragmentManager.beginTransaction();
-        transaction.remove(fragment);
-        transaction.commit();
+        if(fragment!=null) {
+            FragmentTransaction transaction = fragmentManager.beginTransaction();
+            transaction.remove(fragment);
+            transaction.commit();
+        }
         if (timer !=null) {
             timer.cancel();
         }

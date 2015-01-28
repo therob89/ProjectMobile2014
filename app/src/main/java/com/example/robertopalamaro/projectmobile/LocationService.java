@@ -46,7 +46,6 @@ public class LocationService extends Service{
 
     //private final static String TAG ="Broadcast message";
     //public static final String BROADCAST_ACTION = "com.example.robertopalamaro.projectmobile.updateUI";
-    private ArrayList<FriendMarkers>usersPosition;
     static final int MSG_REGISTER_CLIENT = 1;
     private HashMap<String,String> maps = null;
     private Stack<String> pendingPositions;
@@ -94,6 +93,10 @@ public class LocationService extends Service{
                     public void run() {
                         try {
                             Log.println(Log.DEBUG,"Service.GetPosition-Task","Get Data Async started");
+                            if(mClients==null){
+                                Log.println(Log.DEBUG,"Service.GetPosition-Task","No clients alive");
+                                return;
+                            }
                             if(usernameForGetTask==null){
                                 Log.println(Log.DEBUG,"Service.GetPosition-Task","No user is set to getting data from server");
                                 return;
@@ -124,6 +127,10 @@ public class LocationService extends Service{
                 handler.post(new Runnable() {
                     public void run() {
                         try {
+                            if(mClients==null){
+                                Log.println(Log.DEBUG,"Service.SendAsync","No clients alive");
+                                return;
+                            }
                             Log.println(Log.DEBUG,"LocService.SendAsync","Sending data Async Started!");
                             if(sending_flag==false){
                                 if (username==null && latitude_to_send==0 && longitude_to_send==0){
@@ -167,10 +174,9 @@ public class LocationService extends Service{
                     break;
                 case MSG_UNREGISTER_CLIENT:
                     mClients=null;
-                    usersPosition.clear();
-                    usersPosition=null;
+                    //usersPosition.clear();
+                    //usersPosition=null;
                     break;
-
                 case MSG_SET_VALUE:
                     Log.println(Log.DEBUG,"Service-Mex-Handler","Updating position mex");
                     value= msg.arg1;

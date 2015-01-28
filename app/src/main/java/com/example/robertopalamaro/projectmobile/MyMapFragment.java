@@ -22,6 +22,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.util.Base64;
 import android.util.Log;
@@ -87,6 +88,37 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
 
 
 
+    private void getUserPositionAsync(){
+        Timer timer = new Timer();
+        TimerTask doAsynchronousTask = new TimerTask() {
+        final Handler handler = new Handler();
+
+            @Override
+            public void run() {
+                handler.post(new Runnable() {
+                    public void run() {
+                        try {
+                            Log.println(Log.DEBUG, "MapFragment.GetUserPosition", "Getting user position async started");
+                            MainActivity mainActivity = (MainActivity)getActivity();
+                            if(!mainActivity.isBinded()){
+                                Log.println(Log.DEBUG, "MapFragment.GetUserPosition", "Service is not binded..so return");
+                            }
+                            else{
+                                taskToGetActivityPos = new TaskToGetActivityPos();
+                                taskToGetActivityPos.execute(markerOnMap);
+                            }
+
+                        }catch (Exception e) {
+                            // TODO Auto-generated catch block
+                            Log.println(Log.DEBUG, "MapFragment.GetUserPosition", "Error Async Get");
+
+                        }
+                    }
+                });
+            }
+        };
+        timer.schedule(doAsynchronousTask, 0, 30000); //execute in every 50000 ms
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -174,6 +206,7 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
         new LoadHotelAsync(getActivity()).execute(getResources().openRawResource(R.raw.strutturericettivewithcoordinate1),getResources().openRawResource(R.raw.strutturericettivewithcoordinate2)
                 ,getResources().openRawResource(R.raw.strutturericettivewithcoordinate3));
         locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
+        /*
         if(timer != null){
             Log.println(Log.DEBUG,"Map.onConnected ","Start position acquiring from activity");
             // add timer
@@ -184,8 +217,10 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
                     taskToGetActivityPos = new TaskToGetActivityPos();
                     taskToGetActivityPos.execute(markerOnMap);
                 }
-            },30000,120000L);
+            },5000,120000);
         }
+        */
+        getUserPositionAsync();
     }
 
     @Override
@@ -428,10 +463,10 @@ public class MyMapFragment extends Fragment implements  GooglePlayServicesClient
             HashMap<String,MarkerOptions>markerToReturn = new HashMap<String, MarkerOptions>();
             MainActivity mainActivity = (MainActivity)getActivity();
             if (mainActivity.position_received_from_service==null){
-                Log.println(Log.DEBUG, "Map.GetActivityPos", "No new position!!!");
+                Log.println(Log.DEBUG, "Map.GetActivityPos", "No new user positions from Activity!!!");
                 return null;
             }
-            Log.println(Log.DEBUG, "Map.GetActivityPos", "size of position of activity is!!!"+mainActivity.attualUserPositionsFromService().size());
+            Log.println(Log.DEBUG, "Map.GetActivityPos", "Size of user positions from Activity is!!!"+mainActivity.attualUserPositionsFromService().size());
             HashMap<String,String> positionFromActivity = mainActivity.attualUserPositionsFromService();
             for (String k : positionFromActivity.keySet()){
                 if (markerOnMap.containsKey(k)){

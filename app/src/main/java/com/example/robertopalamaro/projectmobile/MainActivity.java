@@ -66,7 +66,7 @@ import java.util.TreeMap;
 import java.util.zip.Inflater;
 
 
-public class MainActivity extends Activity implements RegisterFragment.onLoginListner,MyMapFragment.onUpdatePositionListener {
+public class MainActivity extends Activity implements RegisterFragment.onLoginListener,MyMapFragment.onUpdatePositionListener {
 
     private String[] menuList;
     private DrawerLayout mDrawerLayout;
@@ -82,7 +82,7 @@ public class MainActivity extends Activity implements RegisterFragment.onLoginLi
     private final static String TAG ="Broadcast message";
     private final static String MARKERS_STRING = "MARKERS_ON_MAP";
     private TreeMap<Double, MarkerOptions> markersOnMap;
-    HashMap<String,String> position_received_from_service = null;
+    HashMap<String,String> position_received_from_service;
     private Intent service;
     private String username = "";
     private String password = "";
@@ -96,6 +96,9 @@ public class MainActivity extends Activity implements RegisterFragment.onLoginLi
     private Location currentLocation;
 
 
+    protected boolean isBinded(){
+        return mBound;
+    }
 
     protected HashMap<String,String> attualUserPositionsFromService(){
         return (HashMap<String,String> )position_received_from_service.clone();
@@ -200,7 +203,11 @@ public class MainActivity extends Activity implements RegisterFragment.onLoginLi
             @Override
             public void onDrawerOpened(View drawerView) {
                 super.onDrawerOpened(drawerView);
-                getActionBar().setTitle("Select Options");
+                try {
+                    getActionBar().setTitle("Select Options");
+                }catch (NullPointerException e){
+                    Log.println(Log.DEBUG,"Activity","Action bar is null");
+                }
                 //invalidateOptionsMenu();
             }
 
@@ -240,7 +247,7 @@ public class MainActivity extends Activity implements RegisterFragment.onLoginLi
     @Override
     protected void onStop() {
         super.onStop();
-        if(mBound==true) {
+        if(mBound) {
             unbindService(mConnection);
             mBound = false;
         }
@@ -300,9 +307,16 @@ public class MainActivity extends Activity implements RegisterFragment.onLoginLi
                 }
                 else{
                     item.setIcon(R.drawable.ic_action_location_off);
-                    Toast.makeText(getApplication(),"You must login to activate this",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplication(),"Spotting disabled",Toast.LENGTH_SHORT).show();
+                    Message msg = Message.obtain(null,
+                            LocationService.MSG_UNREGISTER_CLIENT);
+                    try {
+                        mService.send(msg);
+                    }catch (RemoteException e){
+                        Log.println(Log.DEBUG,"Activity.Unbinding","Service doesn't respond");
+                    }
                     //unregisterReceiver(broadcastReceiver);
-                    if (mBound==true) {
+                    if (mBound) {
                         Log.println(Log.DEBUG, "Activity_ActionBar", "Unbinding Service");
                         unbindService(mConnection);
                         mBound = false;

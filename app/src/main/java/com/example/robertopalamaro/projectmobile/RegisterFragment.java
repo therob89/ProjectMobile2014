@@ -64,13 +64,13 @@ public class RegisterFragment extends Fragment {
     private Button loginButton;
     private ProgressBar progressBar;
     private final static int SELECT_IMAGE =110;
-    onLoginListner onLoginListner;
+    onLoginListener onLoginListner;
     private RegisterTask registerTask;
     private LoginAsyncTask loginAsyncTask;
     public RegisterFragment(){}
     //Timer timer = new Timer();
 
-    public interface onLoginListner{
+    public interface onLoginListener{
         public void onLoginDone(String user,String password);
     }
 
@@ -78,7 +78,7 @@ public class RegisterFragment extends Fragment {
     public void onAttach(Activity activity) {
         super.onAttach(activity);
         try {
-            onLoginListner = (onLoginListner) activity;
+            onLoginListner = (onLoginListener) activity;
         } catch (ClassCastException e) {
             throw new ClassCastException(activity.toString() + " must implement OnArticleSelectedListener");
         }
@@ -103,6 +103,12 @@ public class RegisterFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         View rootView = inflater.inflate(R.layout.register_layout,container,false);
+        rootView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                hideSoftKeyboard();
+            }
+        });
         progressBar = (ProgressBar)rootView.findViewById(R.id.progressBar);
         progressBar.setVisibility(View.INVISIBLE);
         button =(Button)rootView.findViewById(R.id.loginButton);
@@ -115,17 +121,15 @@ public class RegisterFragment extends Fragment {
                     progressBar.setVisibility(View.VISIBLE);
                     button.setVisibility(View.INVISIBLE);
                     if(username.getText().toString().isEmpty() || password.getText().toString().isEmpty() || email.getText().toString().isEmpty()){
-                        Toast.makeText(getActivity(),"Insert data before send request",Toast.LENGTH_LONG).show();
-                        loginButton.setVisibility(View.VISIBLE);
-                        progressBar.setVisibility(View.INVISIBLE);
-                        button.setVisibility(View.VISIBLE);
+                        Toast.makeText(getActivity(),"Insert username,password,email to register",Toast.LENGTH_LONG).show();
                         return;
                     }
-                    v.setClickable(false);
+                    //v.setClickable(false);
                     registerTask= new RegisterTask();
                     registerTask.execute("http://robsite.altervista.org/mobile/sendData.php");
-
-
+                    loginButton.setVisibility(View.INVISIBLE);
+                    progressBar.setVisibility(View.VISIBLE);
+                    button.setVisibility(View.INVISIBLE);
                 }
             }
         });
@@ -141,7 +145,9 @@ public class RegisterFragment extends Fragment {
                 loginAsyncTask = new LoginAsyncTask();
                 loginAsyncTask.execute("http://robsite.altervista.org/mobile/login.php");
                 hideSoftKeyboard();
-                loginButton.setClickable(false);
+                loginButton.setVisibility(View.INVISIBLE);
+                progressBar.setVisibility(View.VISIBLE);
+                button.setVisibility(View.INVISIBLE);
 
 
 
@@ -280,7 +286,7 @@ public class RegisterFragment extends Fragment {
         @Override
         protected void onProgressUpdate(Void... values) {
             super.onProgressUpdate(values);
-            button.setBackgroundColor(Color.GREEN);
+            //button.setBackgroundColor(Color.GREEN);
         }
 
         @Override
@@ -299,7 +305,6 @@ public class RegisterFragment extends Fragment {
             else{
                 Toast.makeText(getActivity(),"username|password already taken",Toast.LENGTH_SHORT).show();
             }
-            button.setBackgroundColor(Color.WHITE);
             button.setClickable(true);
             loginButton.setVisibility(View.VISIBLE);
             progressBar.setVisibility(View.INVISIBLE);
@@ -368,6 +373,9 @@ public class RegisterFragment extends Fragment {
                 Toast.makeText(getActivity(),"Username or password incorrect",Toast.LENGTH_SHORT).show();
             }
             loginButton.setClickable(true);
+            loginButton.setVisibility(View.VISIBLE);
+            progressBar.setVisibility(View.INVISIBLE);
+            button.setVisibility(View.VISIBLE);
 
         }
     }
